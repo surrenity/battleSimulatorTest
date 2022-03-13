@@ -5,23 +5,27 @@ namespace BattleSimulatorTest
   //https://gist.github.com/DotNetCoreTutorials/08b0210616769e81034f53a6a420a6d9
   public class AStarSearch
   {
-    public AStarSearch()
-    {
+    public AStarSearchOptions Options { get; }
 
+    public AStarSearch(AStarSearchOptions options)
+    {
+      Options = options;
     }
 
-    public void SearchForExactPosition(Grid grid, Tile start, Tile finish)
+    public Stack<Tile> SearchForExactPosition(Grid grid, Tile start, Tile finish)
     {
-      this.SearchWithRange(grid, start, finish, 0);
+      return this.SearchWithRange(grid, start, finish, 0);
     }
 
-    public void SearchWithRange(Grid grid, Tile start, Tile finish, int attackRange)
+    public Stack<Tile> SearchWithRange(Grid grid, Tile start, Tile finish, int attackRange)
     {
       start.CalculateChebyshevDistance(finish.X, finish.Y);
 
       var activeTiles = new List<Tile>();
       activeTiles.Add(start);
       var visitedTiles = new List<Tile>();
+
+      Stack<Tile> pathTiles = new Stack<Tile>();
 
       while (activeTiles.Any())
       {
@@ -36,12 +40,13 @@ namespace BattleSimulatorTest
           Console.WriteLine("Retracing steps backwards...");
           while (true)
           {
+            pathTiles.Push(tile);
             Console.WriteLine($"{tile.X} : {tile.Y}");
             tile = tile.Parent;
             if (tile == null)
             {
               Console.WriteLine("Done!");
-              return;
+              return pathTiles;
             }
           }
         }
@@ -49,7 +54,12 @@ namespace BattleSimulatorTest
         visitedTiles.Add(checkTile);
         activeTiles.Remove(checkTile);
 
-        var walkableTiles = GetWalkableTiles(grid, checkTile, finish);
+        var walkableTiles = new List<Tile>();
+        //Should refactor to Interface
+        if (Options.IgnoreUnits)
+          walkableTiles = GetWalkableTilesIgnoringCollisions(grid, checkTile, finish);
+        else
+          walkableTiles = GetWalkableTiles(grid, checkTile, finish);
 
         foreach (var walkableTile in walkableTiles)
         {
@@ -75,23 +85,23 @@ namespace BattleSimulatorTest
         }
       }
 
-      Console.WriteLine("No Path Found!");
+      return pathTiles;
     }
 
     private static List<Tile> GetWalkableTiles(Grid grid, Tile currentTile, Tile targetTile)
     {
       var possibleTiles = new List<Tile>()
-            {
-                new Tile { X = currentTile.X, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                new Tile { X = currentTile.X, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1},
-                new Tile { X = currentTile.X - 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                new Tile { X = currentTile.X + 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                //Diagonals
-                new Tile { X = currentTile.X + 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                new Tile { X = currentTile.X + 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                new Tile { X = currentTile.X - 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
-                new Tile { X = currentTile.X - 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
-            };
+      {
+          new Tile { X = currentTile.X, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1},
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          //Diagonals
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+      };
 
       possibleTiles.ForEach(tile => tile.CalculateChebyshevDistance(targetTile.X, targetTile.Y));
 
@@ -100,6 +110,30 @@ namespace BattleSimulatorTest
               .Where(tile => tile.X >= 0 && tile.X <= grid.Rows-1)
               .Where(tile => tile.Y >= 0 && tile.Y <= grid.Columns-1)
               .Where(tile => grid.GetPosition(tile.X, tile.Y) == Guid.Empty || grid.GetPosition(tile.X, tile.Y) == grid.GetPosition(targetTile.X, targetTile.Y) )
+              .ToList();
+    }
+
+    private static List<Tile> GetWalkableTilesIgnoringCollisions(Grid grid, Tile currentTile, Tile targetTile)
+    {
+      var possibleTiles = new List<Tile>()
+      {
+          new Tile { X = currentTile.X, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1},
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          //Diagonals
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X + 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y + 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+          new Tile { X = currentTile.X - 1, Y = currentTile.Y - 1, Parent = currentTile, Cost = currentTile.Cost + 1 },
+      };
+
+      possibleTiles.ForEach(tile => tile.CalculateChebyshevDistance(targetTile.X, targetTile.Y));
+
+
+      return possibleTiles
+              .Where(tile => tile.X >= 0 && tile.X <= grid.Rows - 1)
+              .Where(tile => tile.Y >= 0 && tile.Y <= grid.Columns - 1)
               .ToList();
     }
 

@@ -16,6 +16,16 @@ namespace BattleSimulatorTest
     {
     }
 
+    public bool IsEmpty()
+    {
+      return UnitId == Guid.Empty;
+    }
+
+    public bool IsValid()
+    {
+      return UnitId != Guid.Empty;
+    }
+
   }
 }
 

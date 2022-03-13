@@ -29,11 +29,6 @@ for (int i = 0; i < units.Count; i++)
   grid.PlaceUnit(row: 0, column: i, units.GetValueOrDefault(keys[i]).UnitId);
 }
 
-footie = new Footman("Sunil");
-units.Add(footie.UnitId, footie);
-grid.PlaceUnit(row: 9, column: 9, footie.UnitId);
-
-
 footie = new Footman("Shamma");
 units.Add(footie.UnitId, footie);
 grid.PlaceUnit(row: 2, column: 2, footie.UnitId);
@@ -63,7 +58,11 @@ footie = new Footman("ZammaBlocker");
 units.Add(footie.UnitId, footie);
 grid.PlaceUnit(row: 4, column: 0, footie.UnitId);
 
-////Place Wall of soldiers on Grid
+footie = new Footman("ZammaBlocker");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 5, column: 1, footie.UnitId);
+
+//Place Wall of soldiers on Grid
 //for (int i = 0; i < 10; i++)
 //{
 //  footie = new Footman($"Wall{i}");
@@ -71,22 +70,27 @@ grid.PlaceUnit(row: 4, column: 0, footie.UnitId);
 //  grid.PlaceUnit(row: 7, column: i, footie.UnitId);
 //}
 
-for (int r = 0; r < grid.Columns; r++)
-{
-  Console.Write(r);
-  for (int c = 0; c < grid.Columns; c++)
-  {
-    var unitId = grid.GetPosition(r, c);
-    if (unitId != Guid.Empty)
-      Console.Write("X");
-    else
-      Console.Write("-");
+footie = new Footman("SunilBlocker");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 8, column: 0, footie.UnitId);
 
-  }
-  Console.WriteLine(Environment.NewLine);
-}
+footie = new Footman("SunilBlocker");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 8, column: 1, footie.UnitId);
 
+footie = new Footman("SunilBlocker");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 8, column: 2, footie.UnitId);
 
+footie = new Footman("Sunil");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 9, column: 0, footie.UnitId);
+
+footie = new Footman("Costanza");
+units.Add(footie.UnitId, footie);
+grid.PlaceUnit(row: 9, column: 7, footie.UnitId);
+
+grid.PrintSelf();
 
 //Begin Turns in a loop until winner determined
 //Determine Initiative, Resolve ties
@@ -114,33 +118,67 @@ while(reRollUnits.Count() > 0)
 
 //Sort units by initiative
 var iniativeSortedUnits = aliveUnits.OrderBy(x => x.Initiative);
-foreach(var unit in iniativeSortedUnits)
+foreach (var unit in aliveUnits)
 {
-  unit.Act();
-}
+  unit.Log();
+  //Units will now findTargets
+  //Then they will Attack
+  //If they can't Attack, they will move then attak
+  //If they can't move and attack, they will just move
+  //If they can't move they will skip
 
-//Search for Objects in Range 
-grid.FindUnitsWithinAttackRange(row: 1, column: 1, 1);
-
-//If no units in range, need to find Unit we want to target for movement
-grid.FindTargetUnitForMovement(rowStart: 9, columnStart: 0, 2, new RandomTargetDecision());
-
-
-
-
-//Print board
-for (int r = 0; r < grid.Columns; r++)
-{ 
-  for (int c = 0; c < grid.Columns; c++)
+  var unitPosition = grid.UnitPositions.Single(x => x.UnitId == unit.UnitId);
+  //Search for Objects in attack Range
+  var attackTarget = grid.FindTargetWithinAttackRange(row: unitPosition.Row, column: unitPosition.Column, attackRange: unit.AttackRange, new RandomTargetDecision());
+  if (attackTarget.IsValid())
   {
-    var unitId = grid.GetPosition(r, c);
-    var initiative = 0;
-    if (unitId != Guid.Empty)
-      initiative = units[unitId].Initiative;
-    Console.Write($"[{r},{c}] - {grid.GetPosition(r, c).ToString()} - initiative: {initiative}");
+    Console.WriteLine($"Unit [{unitPosition.Row},{unitPosition.Column}] will attack TARGET [{attackTarget.Row},{attackTarget.Column}]{attackTarget.UnitId}");
+    //Attack and move on
   }
-  Console.WriteLine(Environment.NewLine);
+  else
+  {
+    Console.WriteLine($"Unit [{unitPosition.Row},{unitPosition.Column}] Has No TARGET");
+
+    //If no units in range, need to find Unit we want to target for movement
+    var movementTarget = grid.FindTargetUnitForMovement(rowStart: unitPosition.Row, columnStart: unitPosition.Column, unit.AttackRange, new RandomTargetDecision());
+    if (movementTarget.IsValid())
+      Console.WriteLine($"Position [{unitPosition.Row},{unitPosition.Column}] is {movementTarget.ChebyshevDistance} move away from the TARGET [{movementTarget.Row},{movementTarget.Column}]{movementTarget.UnitId}");
+    else
+      Console.WriteLine($"Unit [{unitPosition.Row},{unitPosition.Column}] Has No TARGET");
+
+
+    //If we have to move to target, this gives us the path
+    var movementPath = grid.FindPathToTarget(rowStart: unitPosition.Row, columnStart: unitPosition.Column, movementTarget, attackRange: unit.AttackRange);
+
+    Tile? destinationTile = null;
+    for (int i = unit.MovementPoints; i >= 0; i--)
+    {
+      Tile? currentTile;
+      movementPath.TryPop(out currentTile);
+
+      if (currentTile != null && grid.GetPosition(currentTile.X, currentTile.Y) == Guid.Empty)
+      {
+        Console.WriteLine($"Position[{currentTile.X},{currentTile.Y}] is available for movement");
+        destinationTile = currentTile;
+      }
+    }
+
+    if (destinationTile != null)
+    {
+      Console.WriteLine($"Position[{destinationTile.X},{destinationTile.Y}] is the destination Tile");
+      grid.RemoveUnit(unitPosition.Row, unitPosition.Column, unit.UnitId);
+      grid.PlaceUnit(destinationTile.X, destinationTile.Y, unit.UnitId);
+
+    }
+    else
+      Console.WriteLine($"{unit.UnitId} Can't move this round");
+  }
+
 }
+
+grid.PrintSelf();
+
+
 
 
 

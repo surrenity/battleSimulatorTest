@@ -31,8 +31,8 @@ namespace BattleSimulatorTest
 
     public override int GetHashCode()
     {
-      int tmp = (this.Column + ((this.Row + 1) / 2));
-      return this.Row + (tmp * tmp);
+      int tmp = (this.Row + ((this.Column + 1) / 2));
+      return this.Column + (tmp * tmp);
     }
   }
 }

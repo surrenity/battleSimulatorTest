@@ -24,9 +24,9 @@ namespace BattleSimulatorTest
       UnitId = Guid.NewGuid();
     }
 
-    public void Act()
+    public void Log()
     {
-
+      Console.WriteLine($"{Name} - {UnitId} acting with Initiative {Initiative}");
     }
 
   }
