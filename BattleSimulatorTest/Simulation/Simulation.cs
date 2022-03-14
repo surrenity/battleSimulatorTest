@@ -15,11 +15,12 @@ namespace BattleSimulatorTest
       Team1Units = new List<Unit>();
       Team2Units = new List<Unit>();
       Units = new Dictionary<Guid, Unit>();
+      Grid = new Grid(0,0);
     }
 
     public Grid CreateGrid(int rows, int columns)
     {
-      return new Grid(rows: 40, columns: 100);
+      return new Grid(rows: rows, columns: columns);
     }
 
     public SimulationResult Run()
