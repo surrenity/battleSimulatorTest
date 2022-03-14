@@ -200,7 +200,7 @@ namespace BattleSimulatorTest
 
     public void PrintSelf(Dictionary<Guid, Unit> units)
     {
-      for (int r = 0; r < Columns; r++)
+      for (int r = 0; r < Rows; r++)
       {
         Console.Write(r);
         for (int c = 0; c < Columns; c++)

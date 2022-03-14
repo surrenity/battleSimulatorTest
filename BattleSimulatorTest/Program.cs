@@ -38,17 +38,19 @@ for (int i = 0; i < team1Units.Count; i++)
   grid.PlaceUnit(row: 0, column: i, team1Units[i].UnitId);
 }
 
+
 var team2Units = units.Where(x => x.Value.TeamId == 2)
   .Select(x => x.Value)
   .ToList();
 for (int i = 0; i < team2Units.Count; i++)
 {
-  grid.PlaceUnit(row: 9, column: i, team2Units[i].UnitId);
+  grid.PlaceUnit(row: grid.Rows-1, column: i, team2Units[i].UnitId);
 }
 
 
 int round = 0;
-while (team1Units.Sum(x => x.Health) > 0 && team2Units.Sum(x => x.Health) > 0)
+DateTime startTime = DateTime.Now;
+while (team1Units.Any() && team2Units.Any())
 {
   Console.WriteLine($"Round({round}) Team 1 Health: {team1Units.Sum(x => x.Health)} Team 2 Health: {team2Units.Sum(x => x.Health)}");
 
@@ -110,6 +112,11 @@ while (team1Units.Sum(x => x.Health) > 0 && team2Units.Sum(x => x.Health) > 0)
         {
           Console.WriteLine($"Unit {targetUnit.Name} has been killed");
           grid.RemoveUnit(attackTarget.Row, attackTarget.Column, targetUnit.UnitId);
+          units.Remove(targetUnit.UnitId);
+          if (targetUnit.TeamId == 1)
+            team1Units.Remove(targetUnit);
+          if (targetUnit.TeamId == 2)
+            team2Units.Remove(targetUnit);
         }
       }
       
@@ -160,8 +167,13 @@ while (team1Units.Sum(x => x.Health) > 0 && team2Units.Sum(x => x.Health) > 0)
 }
 
 Console.WriteLine($"Team 1 Health: {team1Units.Sum(x => x.Health)} Team 2 Health: {team2Units.Sum(x => x.Health)}");
+Console.WriteLine($"Team 1 Units: {team1Units.Count()} Team 2 Units: {team2Units.Count()}, Total Units: {units.Count()}");
+
 Console.WriteLine($"Simulation is Over");
 grid.PrintSelf(units);
+DateTime endTime = DateTime.Now;
+
+Console.WriteLine($"Total Time {endTime - startTime}");
 
 
 
