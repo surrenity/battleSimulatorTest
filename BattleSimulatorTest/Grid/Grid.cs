@@ -47,28 +47,35 @@ namespace BattleSimulatorTest
       return grid[row, column];
     }
 
-    public PotentialTarget FindTargetWithinAttackRange(int row, int column, int attackRange, ITargetDecider targetDecider)
+    public PotentialTarget FindTargetWithinAttackRange(int row, int column, int attackRange, ITargetDecider targetDecider, Dictionary<Guid, Unit> units)
     {
       List<PotentialTarget> potentialTargets = new List<PotentialTarget>();
       var attackingUnitId = GetPosition(row, column);
+      var attackingUnit = units.GetValueOrDefault(attackingUnitId);
 
       int currentMinimumDistance = int.MaxValue;
       int columnSearchStart = column - attackRange < 0 ? 0 : column - attackRange;
       int rowSearchStart = row - attackRange < 0 ? 0 : row - attackRange;
       int columnSearchEnd = column + attackRange > Columns - 1 ? Columns - 1 : column + attackRange;
       int rowSearchEnd = row + attackRange > Rows - 1 ? Rows - 1 : row + attackRange;
-      
 
       for (int r = rowSearchStart; r <= rowSearchEnd; r++)
       {
         for (int c = columnSearchStart; c <= columnSearchEnd; c++)
         {
-          var unitId = GetPosition(r, c);
-          if (unitId != Guid.Empty && unitId != attackingUnitId)
+          var targetUnitId = GetPosition(r, c);
+          var targetUnit = units.GetValueOrDefault(targetUnitId);
+          bool targetUnitIsNotSelf = targetUnitId != attackingUnitId;
+          bool targetUnitIsNotBlank = targetUnitId != Guid.Empty;
+          bool targetUnitIsOnOpposingTeam = false;
+          if (targetUnit != null)
+            targetUnitIsOnOpposingTeam = targetUnit.TeamId != attackingUnit.TeamId;
+
+          if (targetUnitIsNotSelf && targetUnitIsNotBlank && targetUnitIsOnOpposingTeam)
           {
             Console.WriteLine($"Found Potential Target Already in Attack Range - [{r},{c}]");
 
-            var unitPosition = UnitPositions.Single(x => x.UnitId == unitId);
+            var unitPosition = UnitPositions.Single(x => x.UnitId == targetUnitId);
             int columnDifference = Math.Abs(c - unitPosition.Column);
             int rowDifference = Math.Abs(r - unitPosition.Row);
             int chebyshevDistance = Math.Max(columnDifference, rowDifference) - attackRange;
@@ -101,34 +108,23 @@ namespace BattleSimulatorTest
       return target;
     }
 
-    public void PrintSelf()
-    {
-      for (int r = 0; r < Columns; r++)
-      {
-        Console.Write(r);
-        for (int c = 0; c < Columns; c++)
-        {
-          var unitId = GetPosition(r, c);
-          if (unitId != Guid.Empty)
-            Console.Write("X");
-          else
-            Console.Write("-");
-
-        }
-        Console.WriteLine(Environment.NewLine);
-      }
-    }
-
-    public PotentialTarget FindTargetUnitForMovement(int rowStart, int columnStart, int attackRange, ITargetDecider targetDecider)
+    public PotentialTarget FindTargetUnitForMovement(int row, int column, int attackRange, ITargetDecider targetDecider, Dictionary<Guid, Unit> units)
     {
       List<PotentialTarget> potentialTargets = new List<PotentialTarget>();
+      var attackingUnitId = GetPosition(row, column);
+      var attackingUnit = units.GetValueOrDefault(attackingUnitId);
       int currentMinimumDistance = int.MaxValue;
-      var potentialPositions = UnitPositions.Where(x => !(x.Row == rowStart && x.Column == columnStart));
+      var potentialPositions = UnitPositions.Where(x => !(x.Row == row && x.Column == column))
+        .ToList();
+      var sameTeamIds = units.Where(x => x.Value.TeamId == attackingUnit.TeamId)
+        .Select(x => x.Value.UnitId)
+        .ToList();
+      potentialPositions = potentialPositions.ExceptBy(sameTeamIds, x => x.UnitId).ToList();
 
       foreach (var unitPosition in potentialPositions)
       {
-        int columnDifference = Math.Abs(columnStart - unitPosition.Column);
-        int rowDifference = Math.Abs(rowStart - unitPosition.Row);
+        int columnDifference = Math.Abs(column - unitPosition.Column);
+        int rowDifference = Math.Abs(row - unitPosition.Row);
         int chebyshevDistance = Math.Max(columnDifference, rowDifference) - attackRange;
         if (chebyshevDistance <= currentMinimumDistance)
         {
@@ -152,12 +148,14 @@ namespace BattleSimulatorTest
       
       foreach(var potentialTarget in potentialTargets)
       {
-        Console.WriteLine($"Position [{rowStart},{columnStart}] is {potentialTarget.ChebyshevDistance} move away with attack range({attackRange}) of [{potentialTarget.Row},{potentialTarget.Column}]{potentialTarget.UnitId}");
+        Console.WriteLine($"Position [{row},{column}] is {potentialTarget.ChebyshevDistance} move away with attack range({attackRange}) of [{potentialTarget.Row},{potentialTarget.Column}]{potentialTarget.UnitId}");
       }
-      
+
 
       //Decide on the target
-      var target = targetDecider.DecideTarget(potentialTargets);
+      var target = new PotentialTarget();
+      if (potentialTargets.Any())
+        target = targetDecider.DecideTarget(potentialTargets);
 
       return target;
     }
@@ -199,6 +197,30 @@ namespace BattleSimulatorTest
 
       return pathTiles;
     }
+
+    public void PrintSelf(Dictionary<Guid, Unit> units)
+    {
+      for (int r = 0; r < Columns; r++)
+      {
+        Console.Write(r);
+        for (int c = 0; c < Columns; c++)
+        {
+          var unitId = GetPosition(r, c);
+          units.TryGetValue(unitId, out Unit unit);
+          if (unitId != Guid.Empty)
+          {
+            var letter = unit.TeamId == 1 ? "X" : "O";
+            Console.Write(letter);
+          }
+          else
+            Console.Write("-");
+
+        }
+        Console.WriteLine(Environment.NewLine);
+      }
+    }
   }
+
+
 }
 

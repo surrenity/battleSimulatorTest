@@ -12,11 +12,13 @@
     <None Remove="Grid\" />
     <None Remove="Grid\TargetDecision\" />
     <None Remove="Grid\PathFinding\" />
+    <None Remove="Grid\Math\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Units\" />
     <Folder Include="Grid\" />
     <Folder Include="Grid\TargetDecision\" />
     <Folder Include="Grid\PathFinding\" />
+    <Folder Include="Grid\Math\" />
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@ namespace BattleSimulatorTest
   public class Unit
   {
     public Guid UnitId { get; set; }
+    public int? TeamId { get; set; }
     public string? Name { get; set; }
     public int Health { get; set; }
     public int Initiative { get; set; }
@@ -24,9 +25,15 @@ namespace BattleSimulatorTest
       UnitId = Guid.NewGuid();
     }
 
+    public void TakeDamage(int damage)
+    {
+      Health -= damage;
+      if (Health < 0) Health = 0;
+    }
+
     public void Log()
     {
-      Console.WriteLine($"{Name} - {UnitId} acting with Initiative {Initiative}");
+      Console.WriteLine($"{Name} - {UnitId} acting with Initiative {Initiative}. Health: {Health}");
     }
 
   }

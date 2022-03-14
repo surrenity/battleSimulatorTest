@@ -10,8 +10,7 @@ namespace BattleSimulatorTest
 
     public PotentialTarget DecideTarget(List<PotentialTarget> potentialTargets)
     {
-      Random random = new Random();
-      var targetIndex = random.Next(0, potentialTargets.Count);
+      var targetIndex = RandomNumber.Generate(0, potentialTargets.Count);
       return potentialTargets[targetIndex];
     }
   }
