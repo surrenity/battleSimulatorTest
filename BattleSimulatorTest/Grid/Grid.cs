@@ -198,27 +198,6 @@ namespace BattleSimulatorTest
       return pathTiles;
     }
 
-    public void PrintSelf(Dictionary<Guid, Unit> units)
-    {
-      for (int r = 0; r < Rows; r++)
-      {
-        Console.Write(r);
-        for (int c = 0; c < Columns; c++)
-        {
-          var unitId = GetPosition(r, c);
-          units.TryGetValue(unitId, out Unit unit);
-          if (unitId != Guid.Empty)
-          {
-            var letter = unit.TeamId == 1 ? "X" : "O";
-            Console.Write(letter);
-          }
-          else
-            Console.Write("-");
-
-        }
-        Console.WriteLine(Environment.NewLine);
-      }
-    }
   }
 
 
