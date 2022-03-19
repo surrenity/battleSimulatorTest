@@ -29,3 +29,5 @@ Each unit will have these attributes
 Units will never retreat.  
 Units will always try to move forward to attack an enemy.  
 When attacking, A unit will analyze all possible targets in it's attack range and attack one at random  
+
+This project is licensed under the terms of the MIT license.
