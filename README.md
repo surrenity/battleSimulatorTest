@@ -3,8 +3,8 @@ A battle will start with two armies
 A battle will end when all units in one army is defeated  
 The battle will take place on a 2 dimensional grid.   
 The grid can be scaled up and down, but needs to support enough room for all the units to be placed evenly on both sides.  
-It will prefer a "centered Approached", such as the roman phalanx formation. if the grid is 10 columns, the units will be place in the middle rows instead of starting at column row zero. So first placement would be at index 5, then it will be a middle out algorithm to place the remaining units.  
-
+It will place units on 2 teams.
+It will place them at the start and end row.
 
 
 The battle will go through "Rounds"  
